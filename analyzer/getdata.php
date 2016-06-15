@@ -92,14 +92,14 @@
 						<td>" . date(TIME_PATTERN, $row[FLD_CALL_BEGIN_TIME]) . "</td>
 						<td>" . ($row[FLD_CALL_CONNECT_TIME] > 0 ? date(TIME_PATTERN, $row[FLD_CALL_CONNECT_TIME]) : "") . "</td>
 						<td>" . date(TIME_PATTERN, $row[FLD_CALL_END_TIME]) . "</td>
-						<td>" . $row[FLD_CALL_DURATION] . "</td>
+						<td>" . getDurationString($row[FLD_CALL_DURATION]) . "</td>
 					</tr>";
 		}
 		
 		//add row with total calls duration
 		$output .= "<tr>
 						<td colspan='7'>" . OUTPUT_TOTAL_DURATION ."</td>
-						<td>" . $totalDuration . "</td>
+						<td>" . getDurationString($totalDuration) . "</td>
 					</tr>
 					</table>";
 	} else {
@@ -173,6 +173,16 @@
 		//$query = $mysqli->real_escape_string($query);
 		
 		return $query;
+	}
+	
+	
+	function getDurationString($duration) {
+		
+		$h = intval($duration / 3600);
+		$m = intval(($duration - $h *3600) / 60);
+		$s = $duration - $h *3600 - $m * 60;
+		
+		return ($h > 0 ? $h . "h " : "") . ($m > 0 ? $m . "m " : "") . $s . "s";
 	}
 
 ?>
