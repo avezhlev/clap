@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta  charset="UTF-8">
+<title>CUCM calls analyzer</title>
+<style>
+	body {margin: 0; padding: 0;}
+	div.header {position: fixed; top: 0; padding: 25px; z-index: 1; background-color: white;}
+	div.content {padding: 75px 25px 25px;}
+	table, th, td {border: 1px solid black;}
+	table {border-collapse: collapse;}
+</style>
+</head>
+<body>
+	<div class="header">
+		<select id="direction">
+			<option value="from" selected>From</option>
+			<option value="to">To</option>
+		</select>
+		<input type="number" id="number" placeholder="Phone number" />
+		<input type="datetime-local" id="begindate" />
+		<input type="datetime-local" id="enddate" />
+		<button onclick="getData()">Submit</button>
+	</div>
+	<div class="content" id="results"></div>
+	<script>
+		var currentDate,
+		threeDaysAgo,
+		currentDateString,
+		threeDaysAgoString;
+		
+		currentDate = new Date();
+		threeDaysAgo = new Date(currentDate.getTime() - 1000 * 60 * 60 * 24 * 3);
+		currentDate.setHours(currentDate.getHours() - currentDate.getTimezoneOffset() / 60, currentDate.getMinutes(), 0);
+		threeDaysAgo.setHours(-threeDaysAgo.getTimezoneOffset() / 60, 0, 0);
+		
+		currentDateString = currentDate.toISOString();
+		threeDaysAgoString = threeDaysAgo.toISOString();
+		
+		currentDateString = currentDateString.substr(0, currentDateString.length - 5);
+		threeDaysAgoString = threeDaysAgoString.substr(0, threeDaysAgoString.length - 5);
+		
+		document.getElementById("begindate").defaultValue = threeDaysAgoString;
+		document.getElementById("enddate").defaultValue = currentDateString;
+		
+		function getData() {
+		
+			document.getElementById("results").innerHTML = "Please standby!";
+			request = new XMLHttpRequest();
+			request.onreadystatechange = function() {
+				if (request.readyState == 4 && request.status == 200) {
+					document.getElementById("results").innerHTML = request.responseText;
+				}
+			};
+			
+			request.open("GET", "getdata.php?direction=" + document.getElementById("direction").value + 
+											"&number=" + document.getElementById("number").value + 
+											"&begindate=" + document.getElementById("begindate").value + 
+											"&enddate=" + document.getElementById("enddate").value + 
+											"&timezone=" + currentDate.getTimezoneOffset().toString()
+											, true);
+			request.send();
+		}
+	</script>
+</body>
+</html>

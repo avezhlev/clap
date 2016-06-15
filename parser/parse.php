@@ -30,9 +30,9 @@
 	
 	//set database credentials
 	define("DB_SERVER", "localhost");
-	define("DB_USER", "root");
-	define("DB_PASSWORD", "rootsecret");
-	define("DB_NAME", "cucmdata");
+	define("DB_USER", "cucm");
+	define("DB_PASSWORD", "cucmpassword");
+	define("DB_NAME", "cucm");
 	
 	//set precalculated 2^32 to fix overflown signed integer fields
 	define("SIGNED_INT32_FIXER", 4294967296);
