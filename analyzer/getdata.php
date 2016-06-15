@@ -98,8 +98,8 @@
 		
 		//add row with total calls duration
 		$output .= "<tr>
-						<td colspan='7'>" . OUTPUT_TOTAL_DURATION ."</td>
-						<td>" . getDurationString($totalDuration) . "</td>
+						<th colspan='7'>" . OUTPUT_TOTAL_DURATION ."</th>
+						<th>" . getDurationString($totalDuration) . "</th>
 					</tr>
 					</table>";
 	} else {
