@@ -23,13 +23,19 @@
 	define("FLD_ORIG_CALLED_NUMBER", "originalCalledPartyNumber");
 	define("FLD_FINAL_CALLED_NUMBER", "finalCalledPartyNumber");
 	define("FLD_CALL_BEGIN_TIME", "dateTimeOrigination");
+	define("FLD_CALL_CONNECT_TIME", "dateTimeConnect");
 	define("FLD_CALL_END_TIME", "dateTimeDisconnect");
 	define("FLD_CALL_DURATION", "duration");
 	
 	//set error output text
 	define("DATA_UNAVAILABLE", "Unable to retrieve data");
 	
+	define("OUTPUT_INDEX", "#");
+	define("OUTPUT_TOTAL_DURATION", "Total duration");
+	
+	//set output pattern for date-time
 	define("TIME_PATTERN", "Y-m-d H:i:s");
+	
 	
 	$mysqli = new mysqli(DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME) or die(mysqli_error);
 	
@@ -53,36 +59,51 @@
 		}
 	}
 	
-	$query .= ";";
+	if ($_GET['zero'] === 'false') {
+		$query .= " AND " . FLD_CALL_DURATION . " > 0";
+	}
+	
+	$query .= " ORDER BY " . FLD_CALL_BEGIN_TIME . ";";
 	
 	$output = "";
+	$index = 0;
+	$totalDuration = 0;
 	
 	if ($result = $mysqli->query($query)) {
 		
 		$output .= "<table>
 					<tr>
+						<th>" . OUTPUT_INDEX . "</th>
 						<th>" . FLD_CALLING_NUMBER . "</th>
 						<th>" . FLD_ORIG_CALLED_NUMBER . "</th>
 						<th>" . FLD_FINAL_CALLED_NUMBER . "</th>
 						<th>" . FLD_CALL_BEGIN_TIME . "</th>
+						<th>" . FLD_CALL_CONNECT_TIME . "</th>
 						<th>" . FLD_CALL_END_TIME . "</th>
 						<th>" . FLD_CALL_DURATION . "</th>
 					</tr>";
 	
 		while ($row = mysqli_fetch_array($result)) {
 			
+			$totalDuration += $row[FLD_CALL_DURATION];
+			
 			$output .= "<tr>
+						<td>" . ++$index . "</td>
 						<td>" . $row[FLD_CALLING_NUMBER] . "</td>
 						<td>" . $row[FLD_ORIG_CALLED_NUMBER] . "</td>
 						<td>" . $row[FLD_FINAL_CALLED_NUMBER] . "</td>
 						<td>" . date(TIME_PATTERN, $row[FLD_CALL_BEGIN_TIME]) . "</td>
+						<td>" . ($row[FLD_CALL_CONNECT_TIME] > 0 ? date(TIME_PATTERN, $row[FLD_CALL_CONNECT_TIME]) : "") . "</td>
 						<td>" . date(TIME_PATTERN, $row[FLD_CALL_END_TIME]) . "</td>
 						<td>" . $row[FLD_CALL_DURATION] . "</td>
 					</tr>";
 		}
 		
-		$output .= "</table>";
-		
+		$output .= "<tr>
+						<td colspan='7'>" . OUTPUT_TOTAL_DURATION ."</td>
+						<td>" . $totalDuration . "</td>
+					</tr>
+					</table>";
 	} else {
 		
 		$output .= DATA_UNAVAILABLE;
