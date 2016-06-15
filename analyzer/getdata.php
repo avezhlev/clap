@@ -47,22 +47,35 @@
 	$query = "SELECT * FROM " . CDR_TABLE;
 	$query .= " WHERE " . FLD_CALL_BEGIN_TIME . " >= " . $begintime . " AND " . FLD_CALL_END_TIME . " <= " . $endtime;
 	
-	if (!empty($_GET['number'])) { 
+	if (!empty($_GET['number'])) {
 		
-		if ($_GET['direction'] === "from") {
-			
-			$query .= " AND " . FLD_CALLING_NUMBER . " LIKE '" . $_GET['number'] . "'";
-			
-		} else if ($_GET['direction'] === "to") {
+		$numbers = explode("|", str_replace(array("*", "?"), array("%", "_"), $_GET['number']));
+		$query .= " AND (";
 		
-			$query .= " AND (" . FLD_ORIG_CALLED_NUMBER . " LIKE '" . $_GET['number'] . "'" . 
-						" OR " . FLD_FINAL_CALLED_NUMBER . " LIKE '" . $_GET['number'] . "')";
-		} else {
+		for ($i = 0, $size = sizeof($numbers); $i < $size; ++$i) {
 			
-			$query .= " AND (" . FLD_CALLING_NUMBER . " LIKE '" . $_GET['number'] . "'" . 
-						" OR " . FLD_ORIG_CALLED_NUMBER . " LIKE '" . $_GET['number'] . "'" . 
-						" OR " . FLD_FINAL_CALLED_NUMBER . " LIKE '" . $_GET['number'] . "')";
+			if ($i > 0) {
+				$query .= " OR ";
+			}
+			
+			$numbers[$i] = trim($numbers[$i]);
+			
+			if ($_GET['direction'] === "from") {
+				
+				$query .= FLD_CALLING_NUMBER . " LIKE '" . $numbers[$i] . "'";
+				
+			} else if ($_GET['direction'] === "to") {
+				
+				$query .= FLD_ORIG_CALLED_NUMBER . " LIKE '" . $numbers[$i] . "'" . 
+				" OR " . FLD_FINAL_CALLED_NUMBER . " LIKE '" . $numbers[$i] . "'";
+			} else {
+				
+				$query .= FLD_CALLING_NUMBER . " LIKE '" . $numbers[$i] . "'" . 
+				" OR " . FLD_ORIG_CALLED_NUMBER . " LIKE '" . $numbers[$i] . "'" . 
+				" OR " . FLD_FINAL_CALLED_NUMBER . " LIKE '" . $numbers[$i] . "'";
+			}
 		}
+		$query .= ")";
 	}
 	
 	if ($_GET['zero'] === 'false') {
@@ -71,7 +84,8 @@
 	}
 	
 	$query .= " ORDER BY " . FLD_CALL_BEGIN_TIME . ";";
-	echo $query;
+	//$query = $mysqli->real_escape_string($query);
+	
 	$output = "";
 	$index = 0;
 	$totalDuration = 0;
