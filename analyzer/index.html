@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta  charset="UTF-8">
+<meta charset="UTF-8">
 <title>CUCM calls analyzer</title>
 <style>
 	body {margin: 0; padding: 0;}
@@ -18,45 +18,66 @@
 			<option value="to">To</option>
 		</select>
 		<input type="number" id="number" placeholder="Phone number" />
-		<input type="datetime-local" id="begindate" />
-		<input type="datetime-local" id="enddate" />
+		<input type="datetime-local" id="begintime" />
+		<input type="datetime-local" id="endtime" />
 		<button onclick="getData()">Submit</button>
 	</div>
-	<div class="content" id="results"></div>
+	<div class="content" id="content"></div>
 	<script>
+		/*
+		Created by Alexandr Vezhlev.
+		
+		This script sets the default values of date-time input fields.
+		Begin date field is set to the day-before-yesterday midnight.
+		End date is set to current time with seconds reset to zero.
+		*/
 		var currentDate,
-		threeDaysAgo,
+		twoDaysAgo,
 		currentDateString,
-		threeDaysAgoString;
+		twoDaysAgoString;
 		
 		currentDate = new Date();
-		threeDaysAgo = new Date(currentDate.getTime() - 1000 * 60 * 60 * 24 * 3);
+		twoDaysAgo = new Date(currentDate.getTime() - 1000 * 60 * 60 * 24 * 2);
+		
+		//some dirty dirty tricks here,
+		//reset the seconds to zero, shift the time forward by timezone offset
 		currentDate.setHours(currentDate.getHours() - currentDate.getTimezoneOffset() / 60, currentDate.getMinutes(), 0);
-		threeDaysAgo.setHours(-threeDaysAgo.getTimezoneOffset() / 60, 0, 0);
-		
+		//so that after converting the time into UTC time string we get our local time string
 		currentDateString = currentDate.toISOString();
-		threeDaysAgoString = threeDaysAgo.toISOString();
-		
+		//remove last 5 characters which are ".mscZ"
 		currentDateString = currentDateString.substr(0, currentDateString.length - 5);
-		threeDaysAgoString = threeDaysAgoString.substr(0, threeDaysAgoString.length - 5);
 		
-		document.getElementById("begindate").defaultValue = threeDaysAgoString;
-		document.getElementById("enddate").defaultValue = currentDateString;
+		//same here,
+		//timezone shift trick while setting time to midnight
+		twoDaysAgo.setHours(-twoDaysAgo.getTimezoneOffset() / 60, 0, 0);
+		twoDaysAgoString = twoDaysAgo.toISOString();
+		twoDaysAgoString = twoDaysAgoString.substr(0, twoDaysAgoString.length - 5);
 		
+		//set default date-time values to respective fields
+		document.getElementById("begintime").defaultValue = twoDaysAgoString;
+		document.getElementById("endtime").defaultValue = currentDateString;
+		
+		/*
+		Created by Alexandr Vezhlev.
+		
+		This function sends AJAX request to the server-side script
+		and updates interface after receiving an answer.
+		*/
 		function getData() {
-		
-			document.getElementById("results").innerHTML = "Please standby!";
+			
+			document.getElementById("content").innerHTML = "Please standby!";
+			
 			request = new XMLHttpRequest();
 			request.onreadystatechange = function() {
 				if (request.readyState == 4 && request.status == 200) {
-					document.getElementById("results").innerHTML = request.responseText;
+					document.getElementById("content").innerHTML = request.responseText;
 				}
 			};
-			
+			request.timeout = 5000;
 			request.open("GET", "getdata.php?direction=" + document.getElementById("direction").value + 
 											"&number=" + document.getElementById("number").value + 
-											"&begindate=" + document.getElementById("begindate").value + 
-											"&enddate=" + document.getElementById("enddate").value + 
+											"&begintime=" + document.getElementById("begintime").value + 
+											"&endtime=" + document.getElementById("endtime").value + 
 											"&timezone=" + currentDate.getTimezoneOffset().toString()
 											, true);
 			request.send();

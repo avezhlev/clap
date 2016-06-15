@@ -2,7 +2,6 @@
 
 	/*
 	Created by Alexandr Vezhlev.
-	Last modified by Alexandr Vezhlev on 2016/06/09.
 	
 	Script gets list of files piped via stdin from Linux find command 
 	with modification time later than timestamp file modification time.
