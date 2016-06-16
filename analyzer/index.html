@@ -18,10 +18,11 @@
 	div.header {
 		position: fixed;
 		top: 0;
-		padding: 25px;
+		padding: 15px 0;
 		z-index: 1;
 		background-color: white;
 		border-bottom: 1px groove black;
+		text-align: center;
 	}
 	div.spinner {
 		padding: 450px 0 0;
@@ -30,7 +31,7 @@
 	}
 	div.spinner.hidden {display: none;}
 	div.content {
-		padding: 100px 0px 25px;
+		padding: 80px 0px 25px;
 		text-align: center;
 	}
 	input, select, button {
@@ -66,7 +67,7 @@
 		<label>Data from<input type="datetime-local" id="begintime" /></label>
 		<label>till<input type="datetime-local" id="endtime" /></label>
 		<label><input type="checkbox" id="zero" checked />Show zero-duration calls</label>
-		<button onclick="getData()">Submit</button>
+		<button onclick="getData()">Search</button>
 	</div>
 	<div class="spinner hidden" id="spinner">
 		<img src="img/spinner.gif" alt="Loading..." />
