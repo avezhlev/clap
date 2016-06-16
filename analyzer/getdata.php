@@ -66,16 +66,19 @@
 		
 		//add table header
 		$output .= "<table>
-					<tr>
-						<th>" . OUTPUT_INDEX . "</th>
-						<th>" . FLD_CALLING_NUMBER . "</th>
-						<th>" . FLD_ORIG_CALLED_NUMBER . "</th>
-						<th>" . FLD_FINAL_CALLED_NUMBER . "</th>
-						<th>" . FLD_CALL_BEGIN_TIME . "</th>
-						<th>" . FLD_CALL_CONNECT_TIME . "</th>
-						<th>" . FLD_CALL_END_TIME . "</th>
-						<th>" . FLD_CALL_DURATION . "</th>
-					</tr>";
+						<thead>
+							<tr>
+								<th>" . OUTPUT_INDEX . "</th>
+								<th>" . FLD_CALLING_NUMBER . "</th>
+								<th>" . FLD_ORIG_CALLED_NUMBER . "</th>
+								<th>" . FLD_FINAL_CALLED_NUMBER . "</th>
+								<th>" . FLD_CALL_BEGIN_TIME . "</th>
+								<th>" . FLD_CALL_CONNECT_TIME . "</th>
+								<th>" . FLD_CALL_END_TIME . "</th>
+								<th>" . FLD_CALL_DURATION . "</th>
+							</tr>
+						</thead>
+						<tbody>";
 		
 		//for every record in returned dataset
 		while ($row = mysqli_fetch_array($result)) {
@@ -85,15 +88,15 @@
 			
 			//add table row with data
 			$output .= "<tr>
-						<td>" . ++$index . "</td>
-						<td>" . $row[FLD_CALLING_NUMBER] . "</td>
-						<td>" . $row[FLD_ORIG_CALLED_NUMBER] . "</td>
-						<td>" . $row[FLD_FINAL_CALLED_NUMBER] . "</td>
-						<td>" . date(TIME_PATTERN, $row[FLD_CALL_BEGIN_TIME]) . "</td>
-						<td>" . ($row[FLD_CALL_CONNECT_TIME] > 0 ? date(TIME_PATTERN, $row[FLD_CALL_CONNECT_TIME]) : "") . "</td>
-						<td>" . date(TIME_PATTERN, $row[FLD_CALL_END_TIME]) . "</td>
-						<td>" . getDurationString($row[FLD_CALL_DURATION]) . "</td>
-					</tr>";
+							<td>" . ++$index . "</td>
+							<td>" . $row[FLD_CALLING_NUMBER] . "</td>
+							<td>" . $row[FLD_ORIG_CALLED_NUMBER] . "</td>
+							<td>" . $row[FLD_FINAL_CALLED_NUMBER] . "</td>
+							<td>" . date(TIME_PATTERN, $row[FLD_CALL_BEGIN_TIME]) . "</td>
+							<td>" . ($row[FLD_CALL_CONNECT_TIME] > 0 ? date(TIME_PATTERN, $row[FLD_CALL_CONNECT_TIME]) : "") . "</td>
+							<td>" . date(TIME_PATTERN, $row[FLD_CALL_END_TIME]) . "</td>
+							<td>" . getDurationString($row[FLD_CALL_DURATION]) . "</td>
+						</tr>";
 		}
 		
 		//add row with total calls duration
@@ -101,6 +104,7 @@
 						<th colspan='7'>" . OUTPUT_TOTAL_DURATION ."</th>
 						<th>" . getDurationString($totalDuration) . "</th>
 					</tr>
+					</tbody>
 					</table>";
 	} else {
 		
@@ -182,7 +186,7 @@
 		$m = intval(($duration - $h *3600) / 60);
 		$s = $duration - $h *3600 - $m * 60;
 		
-		return ($h > 0 ? $h . "h " : "") . ($m > 0 ? $m . "m " : "") . $s . "s";
+		return ($h > 0 ? $h . ":" : "") . sprintf('%02d', $m) . ":" . sprintf('%02d', $s);
 	}
 
 ?>
