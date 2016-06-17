@@ -56,67 +56,20 @@
 	//connect to mysql db
 	$mysqli = new mysqli(DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME) or die(mysqli_error);
 	
-	//initialize data to output
-	$output = "";
-	$index = 0;
-	$totalDuration = 0;
-	
 	//if sql query is ok
 	if ($result = $mysqli->query(getQuery())) {
 		
-		//add table header
-		$output .= "<table>
-						<thead>
-							<tr>
-								<th>" . OUTPUT_INDEX . "</th>
-								<th>" . FLD_CALLING_NUMBER . "</th>
-								<th>" . FLD_ORIG_CALLED_NUMBER . "</th>
-								<th>" . FLD_FINAL_CALLED_NUMBER . "</th>
-								<th>" . FLD_CALL_BEGIN_TIME . "</th>
-								<th>" . FLD_CALL_CONNECT_TIME . "</th>
-								<th>" . FLD_CALL_END_TIME . "</th>
-								<th>" . FLD_CALL_DURATION . "</th>
-							</tr>
-						</thead>
-						<tbody>";
+		//print data output
+		echo getOutput($result, false);
 		
-		//for every record in returned dataset
-		while ($row = mysqli_fetch_array($result)) {
-			
-			//add up the total calls duration
-			$totalDuration += $row[FLD_CALL_DURATION];
-			
-			//add table row with data
-			$output .= "<tr>
-							<td>" . ++$index . "</td>
-							<td>" . $row[FLD_CALLING_NUMBER] . "</td>
-							<td>" . $row[FLD_ORIG_CALLED_NUMBER] . "</td>
-							<td>" . $row[FLD_FINAL_CALLED_NUMBER] . "</td>
-							<td>" . date(TIME_PATTERN, $row[FLD_CALL_BEGIN_TIME]) . "</td>
-							<td>" . ($row[FLD_CALL_CONNECT_TIME] > 0 ? date(TIME_PATTERN, $row[FLD_CALL_CONNECT_TIME]) : "") . "</td>
-							<td>" . date(TIME_PATTERN, $row[FLD_CALL_END_TIME]) . "</td>
-							<td>" . getDurationString($row[FLD_CALL_DURATION]) . "</td>
-						</tr>";
-		}
-		
-		//add row with total calls duration
-		$output .= "<tr>
-						<th colspan='7'>" . OUTPUT_TOTAL_DURATION ."</th>
-						<th>" . getDurationString($totalDuration) . "</th>
-					</tr>
-					</tbody>
-					</table>";
 	} else {
 		
 		//if sql query is not ok
-		$output .= DATA_UNAVAILABLE;
+		echo DATA_UNAVAILABLE;
 	}
 	
 	//close mysql connection
 	$mysqli->close();
-	
-	//print data output
-	echo $output;
 	
 	
 	
@@ -177,6 +130,73 @@
 		//$query = $mysqli->real_escape_string($query);
 		
 		return $query;
+	}
+	
+	
+	function getOutput($data, $asJSON = true) {
+		
+		$output = "";
+		$index = 0;
+		$totalDuration = 0;
+		
+		if ($asJSON) {
+			
+			$output .= "[";
+			
+			while ($row = mysqli_fetch_assoc($data)) {
+				
+				$output .= json_encode($row) . ",";
+			}
+			
+			$output = rtrim($output, ",") . "]";
+			
+		} else {
+			
+			//add table header
+			$output .= "<table>
+							<thead>
+								<tr>
+									<th>" . OUTPUT_INDEX . "</th>
+									<th>" . FLD_CALLING_NUMBER . "</th>
+									<th>" . FLD_ORIG_CALLED_NUMBER . "</th>
+									<th>" . FLD_FINAL_CALLED_NUMBER . "</th>
+									<th>" . FLD_CALL_BEGIN_TIME . "</th>
+									<th>" . FLD_CALL_CONNECT_TIME . "</th>
+									<th>" . FLD_CALL_END_TIME . "</th>
+									<th>" . FLD_CALL_DURATION . "</th>
+								</tr>
+							</thead>
+							<tbody>";
+							
+			//for every record in returned dataset
+			while ($row = mysqli_fetch_assoc($data)) {
+				
+				//add up the total calls duration
+				$totalDuration += $row[FLD_CALL_DURATION];
+				
+				//add table row with data
+				$output .= "<tr>
+								<td>" . ++$index . "</td>
+								<td>" . $row[FLD_CALLING_NUMBER] . "</td>
+								<td>" . $row[FLD_ORIG_CALLED_NUMBER] . "</td>
+								<td>" . $row[FLD_FINAL_CALLED_NUMBER] . "</td>
+								<td>" . date(TIME_PATTERN, $row[FLD_CALL_BEGIN_TIME]) . "</td>
+								<td>" . ($row[FLD_CALL_CONNECT_TIME] > 0 ? date(TIME_PATTERN, $row[FLD_CALL_CONNECT_TIME]) : "") . "</td>
+								<td>" . date(TIME_PATTERN, $row[FLD_CALL_END_TIME]) . "</td>
+								<td>" . getDurationString($row[FLD_CALL_DURATION]) . "</td>
+							</tr>";
+			}
+		
+			//add row with total calls duration
+			$output .= "<tr>
+							<td colspan='7'>" . OUTPUT_TOTAL_DURATION ."</td>
+							<td>" . getDurationString($totalDuration) . "</td>
+						</tr>
+					</tbody>
+				</table>";
+		}
+		
+		return $output;
 	}
 	
 	
