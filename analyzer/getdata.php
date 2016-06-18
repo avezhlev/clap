@@ -52,15 +52,19 @@
 	//set output pattern for date-time
 	define("TIME_PATTERN", "Y-m-d H:i:s");
 	
+	//set array of fields to be selected
+	$fieldsToSelect = array(FLD_CALLING_NUMBER, FLD_ORIG_CALLED_NUMBER, FLD_FINAL_CALLED_NUMBER, 
+							FLD_CALL_BEGIN_TIME, FLD_CALL_CONNECT_TIME, FLD_CALL_END_TIME, FLD_CALL_DURATION);
+	
 	
 	//connect to mysql db
-	$mysqli = new mysqli(DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME) or die(mysqli_error);
+	$mysqli = new mysqli(DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME) or die(mysqli_error($mysqli));
 	
 	//if sql query is ok
-	if ($result = $mysqli->query(getQuery())) {
+	if ($result = $mysqli->query(getQuery($fieldsToSelect))) {
 		
 		//print data output
-		echo getOutput($result, false);
+		echo getOutput($fieldsToSelect, $result, false);
 		
 	} else {
 		
@@ -73,11 +77,7 @@
 	
 	
 	
-	function getQuery() {
-		
-		//set array of fields to be selected
-		$fieldsToSelect = array(FLD_CALLING_NUMBER, FLD_ORIG_CALLED_NUMBER, FLD_FINAL_CALLED_NUMBER, 
-								FLD_CALL_BEGIN_TIME, FLD_CALL_CONNECT_TIME, FLD_CALL_END_TIME, FLD_CALL_DURATION);
+	function getQuery($fieldsToSelect) {
 		
 		//begin query construction
 		$query = "SELECT " . implode(",", $fieldsToSelect) . " FROM " . CDR_TABLE;
@@ -133,24 +133,23 @@
 	}
 	
 	
-	function getOutput($data, $asJSON = true) {
-		
-		$output = "";
-		$index = 0;
-		$totalDuration = 0;
+	function getOutput($header, $data, $asJSON = true) {
 		
 		if ($asJSON) {
 			
-			$output .= "[";
+			$output = array();
+			$output[] = $header;
 			
-			while ($row = mysqli_fetch_assoc($data)) {
+			while ($row = mysqli_fetch_row($data)) {
 				
-				$output .= json_encode($row) . ",";
+				$output[] = $row;
 			}
 			
-			$output = rtrim($output, ",") . "]";
+			return json_encode($output);
 			
 		} else {
+			
+			$output = "";
 			
 			//add table header
 			$output .= "<table>
@@ -167,6 +166,9 @@
 								</tr>
 							</thead>
 							<tbody>";
+							
+			$index = 0;
+			$totalDuration = 0;
 							
 			//for every record in returned dataset
 			while ($row = mysqli_fetch_assoc($data)) {
@@ -194,9 +196,9 @@
 						</tr>
 					</tbody>
 				</table>";
+				
+			return $output;
 		}
-		
-		return $output;
 	}
 	
 	
