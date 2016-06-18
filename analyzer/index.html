@@ -54,8 +54,8 @@
 	}
 	tr {background-color: #f6f6f6;}
 	tr:hover {background-color: #e9e9ff;}
-	tr:nth-child(odd) {background-color: #e9e9e9;}
-	tr:nth-child(odd):hover {background-color: #e3e3ff;}
+	tr:nth-child(even) {background-color: #e9e9e9;}
+	tr:nth-child(even):hover {background-color: #e3e3ff;}
 </style>
 </head>
 <body>
@@ -70,7 +70,7 @@
 		<label>Data from<input type="datetime-local" id="begintime" /></label>
 		<label>till<input type="datetime-local" id="endtime" /></label>
 		<label><input type="checkbox" id="zero" unchecked />Show zero-duration calls</label>
-		<button onclick="getData()">Search</button>
+		<button onclick="queryData()">Search</button>
 	</div>
 	<div class="spinner hidden" id="spinner">
 		<img src="img/spinner.gif" alt="Loading..." />
@@ -110,13 +110,14 @@
 		document.getElementById("begintime").defaultValue = twoDaysAgoString;
 		document.getElementById("endtime").defaultValue = currentDateString;
 		
+		
 		/*
 		Created by Alexandr Vezhlev.
 		
 		This function sends AJAX request to the server-side script
 		and updates interface after receiving an answer.
 		*/
-		function getData() {
+		function queryData() {
 			
 			document.getElementById("content").innerHTML = "";
 			document.getElementById("spinner").className = "spinner";
@@ -124,11 +125,11 @@
 			request = new XMLHttpRequest();
 			request.onreadystatechange = function() {
 				if (request.readyState == 4 && request.status == 200) {
-					document.getElementById("spinner").className = "spinner hidden";
-					document.getElementById("content").innerHTML = request.responseText;
+				
+					showData(request.responseText);
 				}
 			};
-			request.timeout = 5000;
+			request.timeout = 10000;
 			request.open("GET", "getdata.php?direction=" + document.getElementById("direction").value + 
 											"&number=" + document.getElementById("number").value + 
 											"&begintime=" + document.getElementById("begintime").value + 
@@ -137,6 +138,75 @@
 											"&zero=" + document.getElementById("zero").checked
 											, true);
 			request.send();
+		}
+		
+		
+		function showData(data) {
+			
+			var calls = JSON.parse(data);
+			var columnCount = calls[0].length;
+			
+			var table = document.createElement("TABLE");
+			var thead = document.createElement("THEAD");
+			table.appendChild(thead);
+ 
+			var row = thead.insertRow(-1);
+			
+			for (var i = -1; i < columnCount; i++) {
+				var headerCell = document.createElement("TH");
+				headerCell.innerHTML = i < 0 ? "#" : calls[0][i];
+				row.appendChild(headerCell);
+			}
+			
+			var tbody = document.createElement("TBODY");
+			table.appendChild(tbody);
+			
+			var totalDuration = 0;
+ 
+			for (var i = 1; i < calls.length; i++) {
+				row = tbody.insertRow(-1);
+				for (var j = -1; j < columnCount; j++) {
+					var cell = row.insertCell(-1);
+					switch (j) {
+						case -1:
+							cell.innerHTML = i;
+							break;
+						case 6:
+							totalDuration += parseInt(calls[i][j]);
+							cell.innerHTML = getDurationString(calls[i][j]);
+							break;
+						default:
+							cell.innerHTML = calls[i][j];
+					}
+				}
+			}
+			
+			row = tbody.insertRow(-1);
+			var cell = row.insertCell(-1);
+			cell.colSpan = columnCount;
+			cell.innerHTML = "Total duration";
+			row.insertCell(-1).innerHTML = getDurationString(totalDuration);
+			
+			document.getElementById("spinner").className = "spinner hidden";
+			document.getElementById("content").appendChild(table);
+			
+		}
+		
+		
+		function getDurationString(duration) {
+		
+			var h = Math.floor(duration / 3600);
+			var m = Math.floor((duration - h *3600) / 60);
+			var s = duration - h *3600 - m * 60;
+		
+			return (h > 0 ? h + ":" : "") + pad(m) + ":" + pad(s);
+		
+		}
+		
+		
+		function pad(num) {
+			
+			return num < 10 ? "0" + num : num;
 		}
 	</script>
 </body>

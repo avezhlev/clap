@@ -64,7 +64,7 @@
 	if ($result = $mysqli->query(getQuery($fieldsToSelect))) {
 		
 		//print data output
-		echo getOutput($fieldsToSelect, $result, false);
+		echo getOutput($fieldsToSelect, $result, true);
 		
 	} else {
 		
