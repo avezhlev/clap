@@ -11,7 +11,6 @@
 		number		string,				list of masked phone numbers (e.g "1010* | 101?1 | *0")
 		begintime	date-time string,	begin time of a call select
 		endtime		date-time string,	end time of a call select
-		timezone	integer,			time zone offset in -(minutes)
 		zero		boolean,			true if zero-duration calls should be selected
 	*/
 	
@@ -19,9 +18,6 @@
 	ini_set("display_errors", 1);
 	ini_set("display_startup_errors", 1);
 	error_reporting(E_ALL);
-	
-	//set server-side timezone for the script
-	//date_default_timezone_set('Asia/Yekaterinburg');
 	
 	//set names of database tables
 	define("CDR_TABLE", "cdr");
@@ -51,6 +47,7 @@
 	
 	//set output pattern for date-time
 	define("TIME_PATTERN", "Y-m-d H:i:s");
+	
 	
 	//set array of fields to be selected
 	$fieldsToSelect = array(FLD_CALLING_NUMBER, FLD_ORIG_CALLED_NUMBER, FLD_FINAL_CALLED_NUMBER, 
@@ -82,13 +79,7 @@
 		//begin query construction
 		$query = "SELECT " . implode(",", $fieldsToSelect) . " FROM " . CDR_TABLE;
 		
-		//retrieve begin and end time of data to select
-		$begintime = strtotime($_GET['begintime']);
-		//+ 60 * $_GET['timezone'] + $serverOffset;
-		$endtime = strtotime($_GET['endtime']);
-		//+ 60 * $_GET['timezone'] + $serverOffset;
-		
-		$query .= " WHERE " . FLD_CALL_BEGIN_TIME . " >= " . $begintime . " AND " . FLD_CALL_END_TIME . " <= " . $endtime;
+		$query .= " WHERE " . FLD_CALL_BEGIN_TIME . " >= " . $_GET['begintime'] . " AND " . FLD_CALL_END_TIME . " <= " . $_GET['endtime'];
 		
 		if (!empty(trim($_GET['number']))) {
 			

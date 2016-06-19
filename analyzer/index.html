@@ -130,11 +130,14 @@
 				}
 			};
 			request.timeout = 10000;
+			
+			var beginTime = Math.floor(new Date(document.getElementById("begintime").value).getTime() / 1000) + currentDate.getTimezoneOffset() * 60;
+			var endTime = Math.floor(new Date(document.getElementById("endtime").value).getTime() / 1000) + currentDate.getTimezoneOffset() * 60;
+			
 			request.open("GET", "getdata.php?direction=" + document.getElementById("direction").value + 
 											"&number=" + document.getElementById("number").value + 
-											"&begintime=" + document.getElementById("begintime").value + 
-											"&endtime=" + document.getElementById("endtime").value + 
-											"&timezone=" + currentDate.getTimezoneOffset().toString() + 
+											"&begintime=" + beginTime + 
+											"&endtime=" + endTime + 
 											"&zero=" + document.getElementById("zero").checked
 											, true);
 			request.send();
@@ -189,7 +192,6 @@
 			
 			document.getElementById("spinner").className = "spinner hidden";
 			document.getElementById("content").appendChild(table);
-			
 		}
 		
 		
