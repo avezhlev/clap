@@ -14,22 +14,16 @@
 		zero		boolean,			true if zero-duration calls should be selected
 	*/
 	
-	//turn on debug messages
-	ini_set("display_errors", 1);
-	ini_set("display_startup_errors", 1);
-	error_reporting(E_ALL);
-	
-	//set names of database tables
-	define("CDR_TABLE", "cdr");
-	define("CMR_TABLE", "cmr");
-	
 	//set database credentials
 	define("DB_SERVER", "localhost");
 	define("DB_USER", "cucm");
 	define("DB_PASSWORD", "cucmpassword");
 	define("DB_NAME", "cucm");
 	
-	//set call parameters fields
+	//set names of database tables
+	define("CDR_TABLE", "cdr");
+	
+	//set fields
 	define("FLD_CALLING_NUMBER", "callingPartyNumber");
 	define("FLD_ORIG_CALLED_NUMBER", "originalCalledPartyNumber");
 	define("FLD_FINAL_CALLED_NUMBER", "finalCalledPartyNumber");
@@ -38,35 +32,16 @@
 	define("FLD_CALL_END_TIME", "dateTimeDisconnect");
 	define("FLD_CALL_DURATION", "duration");
 	
-	//set error output text
-	define("DATA_UNAVAILABLE", "Unable to retrieve data");
-	
-	//set result table field names
-	define("OUTPUT_INDEX", "#");
-	define("OUTPUT_TOTAL_DURATION", "Total duration");
-	
-	//set output pattern for date-time
-	define("TIME_PATTERN", "Y-m-d H:i:s");
-	
-	
-	//set array of fields to be selected
-	$fieldsToSelect = array(FLD_CALLING_NUMBER, FLD_ORIG_CALLED_NUMBER, FLD_FINAL_CALLED_NUMBER, 
-							FLD_CALL_BEGIN_TIME, FLD_CALL_CONNECT_TIME, FLD_CALL_END_TIME, FLD_CALL_DURATION);
-	
 	
 	//connect to mysql db
 	$mysqli = new mysqli(DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME) or die(mysqli_error($mysqli));
 	
 	//if sql query is ok
-	if ($result = $mysqli->query(getQuery($fieldsToSelect))) {
+	if ($result = $mysqli->query(getQuery())) {
 		
 		//print data output
-		echo getOutput($fieldsToSelect, $result, true);
+		echo getOutput($result);
 		
-	} else {
-		
-		//if sql query is not ok
-		echo DATA_UNAVAILABLE;
 	}
 	
 	//close mysql connection
@@ -74,7 +49,11 @@
 	
 	
 	
-	function getQuery($fieldsToSelect) {
+	function getQuery() {
+		
+		//set array of fields to be selected
+		$fieldsToSelect = array(FLD_CALLING_NUMBER, FLD_ORIG_CALLED_NUMBER, FLD_FINAL_CALLED_NUMBER, 
+								FLD_CALL_BEGIN_TIME, FLD_CALL_CONNECT_TIME, FLD_CALL_END_TIME, FLD_CALL_DURATION);
 		
 		//begin query construction
 		$query = "SELECT " . implode(",", $fieldsToSelect) . " FROM " . CDR_TABLE;
@@ -118,88 +97,21 @@
 		}
 		
 		$query .= " ORDER BY " . FLD_CALL_BEGIN_TIME . ";";
-		//$query = $mysqli->real_escape_string($query);
 		
 		return $query;
 	}
 	
 	
-	function getOutput($header, $data, $asJSON = true) {
+	function getOutput($data) {
 		
-		if ($asJSON) {
-			
-			$output = array();
-			$output[] = $header;
-			
-			while ($row = mysqli_fetch_row($data)) {
-				
-				$output[] = $row;
-			}
-			
-			return json_encode($output);
-			
-		} else {
-			
-			$output = "";
-			
-			//add table header
-			$output .= "<table>
-							<thead>
-								<tr>
-									<th>" . OUTPUT_INDEX . "</th>
-									<th>" . FLD_CALLING_NUMBER . "</th>
-									<th>" . FLD_ORIG_CALLED_NUMBER . "</th>
-									<th>" . FLD_FINAL_CALLED_NUMBER . "</th>
-									<th>" . FLD_CALL_BEGIN_TIME . "</th>
-									<th>" . FLD_CALL_CONNECT_TIME . "</th>
-									<th>" . FLD_CALL_END_TIME . "</th>
-									<th>" . FLD_CALL_DURATION . "</th>
-								</tr>
-							</thead>
-							<tbody>";
-							
-			$index = 0;
-			$totalDuration = 0;
-							
-			//for every record in returned dataset
-			while ($row = mysqli_fetch_assoc($data)) {
-				
-				//add up the total calls duration
-				$totalDuration += $row[FLD_CALL_DURATION];
-				
-				//add table row with data
-				$output .= "<tr>
-								<td>" . ++$index . "</td>
-								<td>" . $row[FLD_CALLING_NUMBER] . "</td>
-								<td>" . $row[FLD_ORIG_CALLED_NUMBER] . "</td>
-								<td>" . $row[FLD_FINAL_CALLED_NUMBER] . "</td>
-								<td>" . date(TIME_PATTERN, $row[FLD_CALL_BEGIN_TIME]) . "</td>
-								<td>" . ($row[FLD_CALL_CONNECT_TIME] > 0 ? date(TIME_PATTERN, $row[FLD_CALL_CONNECT_TIME]) : "") . "</td>
-								<td>" . date(TIME_PATTERN, $row[FLD_CALL_END_TIME]) . "</td>
-								<td>" . getDurationString($row[FLD_CALL_DURATION]) . "</td>
-							</tr>";
-			}
+		$output = array();
 		
-			//add row with total calls duration
-			$output .= "<tr>
-							<td colspan='7'>" . OUTPUT_TOTAL_DURATION ."</td>
-							<td>" . getDurationString($totalDuration) . "</td>
-						</tr>
-					</tbody>
-				</table>";
-				
-			return $output;
+		while ($row = mysqli_fetch_assoc($data)) {
+			
+			$output[] = $row;
 		}
-	}
-	
-	
-	function getDurationString($duration) {
 		
-		$h = intval($duration / 3600);
-		$m = intval(($duration - $h *3600) / 60);
-		$s = $duration - $h *3600 - $m * 60;
-		
-		return ($h > 0 ? $h . ":" : "") . sprintf('%02d', $m) . ":" . sprintf('%02d', $s);
+		return json_encode($output);
 	}
 
 ?>
