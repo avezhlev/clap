@@ -134,8 +134,19 @@
 				alert("Request timed out");
 			};
 			
-			var beginTime = Math.floor(Date.parse(document.getElementById("begintime").value) / 1000) + currentDate.getTimezoneOffset() * 60;
-			var endTime = Math.floor(Date.parse(document.getElementById("endtime").value) / 1000) + currentDate.getTimezoneOffset() * 60;
+			var beginTime = Date.parse(document.getElementById("begintime").value);
+			if (isNaN(beginTime)) {
+				beginTime = 0;
+			} else {
+				beginTime = Math.floor(beginTime / 1000) + currentDate.getTimezoneOffset() * 60;
+			}
+			
+			var endTime = Date.parse(document.getElementById("endtime").value);
+			if (isNaN(endTime)) {
+				endTime = 2147483647;
+			} else {
+				endTime = Math.floor(endTime / 1000) + currentDate.getTimezoneOffset() * 60;
+			}
 			
 			request.open("GET", "getdata.php?direction=" + document.getElementById("direction").value + 
 											"&number=" + document.getElementById("number").value + 
