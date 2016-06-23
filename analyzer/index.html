@@ -71,6 +71,9 @@
 			
 			request = new XMLHttpRequest();
 			request.onreadystatechange = function() {
+			
+				document.getElementById("spinner").className = "spinner hidden";
+				
 				if (request.readyState == 4 && request.status == 200) {
 				
 					showData(request.responseText);
@@ -183,12 +186,10 @@
 				cell.innerHTML = COLUMN_TOTAL_DURATION;
 				row.insertCell(-1).innerHTML = getDurationString(totalDuration);
 				
-				document.getElementById("spinner").className = "spinner hidden";
 				document.getElementById("content").appendChild(table);
 				
 			} else {
 			
-				document.getElementById("spinner").className = "spinner hidden";
 				alert("Invalid input parameters");
 			}
 		}
