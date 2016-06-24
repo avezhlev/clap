@@ -71,13 +71,13 @@
 			
 			request = new XMLHttpRequest();
 			request.onreadystatechange = function() {
-			
-				document.getElementById("spinner").className = "spinner hidden";
 				
 				if (request.readyState == 4 && request.status == 200) {
 				
 					showData(request.responseText);
 				}
+				
+				document.getElementById("spinner").className = "spinner hidden";
 			};
 			request.ontimeout = function() {
 				document.getElementById("spinner").className = "spinner hidden";
