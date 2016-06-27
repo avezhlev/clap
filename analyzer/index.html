@@ -122,8 +122,19 @@
 		*/
 		function showData(data) {
 		
+			//localization data
 			const COLUMN_NUMBER = "#";
 			const COLUMN_TOTAL_DURATION = "Total duration";
+			const COLUMN_NAMES = {
+								callingPartyNumber: "Calling party number",
+								originalCalledPartyNumber: "Called party number (orig.)",
+								finalCalledPartyNumber: "Called party number (final)",
+								dateTimeOrigination: "Origination time",
+								dateTimeConnect: "Connect time",
+								dateTimeDisconnect: "Disconnect time",
+								duration: "Duration"
+								};
+								
 			
 			if (data) {
 			
@@ -146,7 +157,7 @@
 					for (key in calls[0]) {
 						
 						var headerCell = document.createElement("TH");
-						headerCell.innerHTML = key;
+						headerCell.innerHTML = key in COLUMN_NAMES ? COLUMN_NAMES[key] : key;
 						row.appendChild(headerCell);
 						++dataColumnCount;
 					}
