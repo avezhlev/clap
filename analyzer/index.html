@@ -5,7 +5,7 @@
 <title>CUCM calls analyzer</title>
 <link href="css/styles.css" rel="stylesheet">
 </head>
-<body>
+<body onload="setDefaultDateTime()">
 	<div class="header">
 		<select id="direction">
 			<option value="from" selected>From</option>
@@ -24,40 +24,44 @@
 	<div class="content" id="content" />
 	<script>
 		/*
-		
 		Created by Alexandr Vezhlev.
+		*/
 		
-		This script sets the default values of date-time input fields.
+		/*
+		
+		Sets the default values of date-time input fields.
 		Begin date field is set to the day-before-yesterday midnight.
 		End date is set to current time with seconds reset to zero.
 		
 		*/
-		var currentDate,
-		twoDaysAgo,
-		currentDateString,
-		twoDaysAgoString;
+		function setDefaultDateTime() {
 		
-		currentDate = new Date();
-		twoDaysAgo = new Date(currentDate.getTime() - 1000 * 60 * 60 * 24 * 2);
+			var currentDate,
+			twoDaysAgo,
+			currentDateString,
+			twoDaysAgoString;
 		
-		//some dirty, dirty tricks here,
-		//reset the seconds to zero, shift the time forward by timezone offset
-		currentDate.setHours(currentDate.getHours() - currentDate.getTimezoneOffset() / 60, currentDate.getMinutes(), 0);
-		//so that after converting the time into UTC time string we get our local time string
-		currentDateString = currentDate.toISOString();
-		//remove last 5 characters which are ".mscZ"
-		currentDateString = currentDateString.substr(0, currentDateString.length - 5);
+			currentDate = new Date();
+			twoDaysAgo = new Date(currentDate.getTime() - 1000 * 60 * 60 * 24 * 2);
 		
-		//same here,
-		//timezone shift trick while setting time to midnight
-		twoDaysAgo.setHours(-twoDaysAgo.getTimezoneOffset() / 60, 0, 0);
-		twoDaysAgoString = twoDaysAgo.toISOString();
-		twoDaysAgoString = twoDaysAgoString.substr(0, twoDaysAgoString.length - 5);
-		
-		//set default date-time values to respective fields
-		document.getElementById("begintime").defaultValue = twoDaysAgoString;
-		document.getElementById("endtime").defaultValue = currentDateString;
-		
+			//some dirty, dirty tricks here,
+			//reset the seconds to zero, shift the time forward by timezone offset
+			currentDate.setHours(currentDate.getHours() - currentDate.getTimezoneOffset() / 60, currentDate.getMinutes(), 0);
+			//so that after converting the time into UTC time string we get our local time string
+			currentDateString = currentDate.toISOString();
+			//remove last 5 characters which are ".mscZ"
+			currentDateString = currentDateString.substr(0, currentDateString.length - 5);
+			
+			//same here,
+			//timezone shift trick while setting time to midnight
+			twoDaysAgo.setHours(-twoDaysAgo.getTimezoneOffset() / 60, 0, 0);
+			twoDaysAgoString = twoDaysAgo.toISOString();
+			twoDaysAgoString = twoDaysAgoString.substr(0, twoDaysAgoString.length - 5);
+			
+			//set default date-time values to respective fields
+			document.getElementById("begintime").defaultValue = twoDaysAgoString;
+			document.getElementById("endtime").defaultValue = currentDateString;
+		}
 		
 		/*
 		
@@ -88,18 +92,20 @@
 				alert("Request timed out");
 			};
 			
+			var timezoneOffset = (new Date).getTimezoneOffset() * 60;
+			
 			var beginTime = Date.parse(document.getElementById("begintime").value);
 			if (isNaN(beginTime)) {
 				beginTime = 0;
 			} else {
-				beginTime = Math.floor(beginTime / 1000) + currentDate.getTimezoneOffset() * 60;
+				beginTime = Math.floor(beginTime / 1000) + timezoneOffset;
 			}
 			
 			var endTime = Date.parse(document.getElementById("endtime").value);
 			if (isNaN(endTime)) {
 				endTime = 2147483647;
 			} else {
-				endTime = Math.floor(endTime / 1000) + currentDate.getTimezoneOffset() * 60;
+				endTime = Math.floor(endTime / 1000) + timezoneOffset;
 			}
 			
 			request.open("GET", "getdata.php?direction=" + document.getElementById("direction").value + 
@@ -253,7 +259,10 @@
 			if (unixTime == 0) {
 				return "";
 			}
-			var asString = new Date((unixTime - currentDate.getTimezoneOffset() * 60) * 1000).toISOString();
+			
+			var timezoneOffset = (new Date).getTimezoneOffset() * 60;
+			
+			var asString = new Date((unixTime - timezoneOffset) * 1000).toISOString();
 			return asString.substr(0, asString.length - 5).replace("T", " ");
 		}
 	</script>
