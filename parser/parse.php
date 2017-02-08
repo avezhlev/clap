@@ -86,15 +86,15 @@
 					$data[$index] +=  SIGNED_INT32_FIXER;
 				}
 			}
-			//set completely empty strings to "" value (to make proper sql query)
+			//set completely empty strings to '0' value (to make proper sql query)
 			for ($j = 0; $j < count($data); ++$j) {
 				if (empty($data[$j])) {
-					$data[$j] = '""';
+					$data[$j] = '0';
 				}
 			}
 			
 			//combine all data into query
-			$query .= "(0," . implode(",", $data) . ")" . ($i === $entries-1 ? ";" : ",");
+			$query .= "(0," . implode(",", $data) . ")" . ($i === $entries - 1 ? ";" : ",");
 		}
 		
 		//execute query

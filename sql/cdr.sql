@@ -52,7 +52,7 @@ CREATE TABLE `cdr` (
   `dateTimeConnect` int(11) NOT NULL DEFAULT '0',
   `dateTimeDisconnect` int(11) NOT NULL DEFAULT '0',
   `lastRedirectDn` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
-  `pkid` int(11) NOT NULL DEFAULT '0',
+  `pkid` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `originalCalledPartyNumberPartition` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `callingPartyNumberPartition` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `finalCalledPartyNumberPartition` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
