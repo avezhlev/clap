@@ -21,25 +21,31 @@ class CallsDataDao {
 	const FLD_CALL_DURATION = "duration";
 
 
+
 	static function getCallsData($data) {
 
 		$callsData = array();
-		//connect to mysql db
-		$mysqli = new mysqli(self::DB_SERVER, self::DB_USER, self::DB_PASSWORD, self::DB_NAME) or die(mysqli_error($mysqli));
 
-		//if sql query is ok
-		if ($result = $mysqli->query(self::getQuery($data))) {
-
-			while ($row = mysqli_fetch_assoc($result)) {
-				$callsData[] = $row;
-			}
-			
+		try {
+			//connect to mysql db
+			$conn = new PDO("mysql:host=" . self::DB_SERVER .";dbname=" . self::DB_NAME, self::DB_USER, self::DB_PASSWORD);
+	    	$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+	    	$query = self::getQuery($data);
+	    	$stmt = $conn->prepare($query["sql"]);
+	    	//if sql query is ok
+	    	if ($stmt->execute($query["params"])) {
+	    		$callsData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	    	}
+	    } catch(PDOException $e) {
+		    $callsData[] = array("Error: " => $e->getMessage());
 		}
-		//close mysql connection
-		$mysqli->close();
+
+		$conn = null;
 
 		return $callsData;
 	}
+
+
 
 	static function getQuery($data) {
 		
@@ -47,50 +53,60 @@ class CallsDataDao {
 		$fieldsToSelect = array(self::FLD_CALLING_NUMBER, self::FLD_ORIG_CALLED_NUMBER, self::FLD_FINAL_CALLED_NUMBER, 
 								self::FLD_CALL_BEGIN_TIME, self::FLD_CALL_CONNECT_TIME, self::FLD_CALL_END_TIME, self::FLD_CALL_DURATION);
 		
-		//begin query construction
-		$query = "SELECT " . implode(",", $fieldsToSelect) . " FROM " . self::CDR_TABLE;
+		//begin query and params array construction
+		$sql = "SELECT " . implode(",", $fieldsToSelect) . " FROM " . self::CDR_TABLE;
+		$params = array();
 		
-		$query .= " WHERE " . self::FLD_CALL_BEGIN_TIME . " >= " . $data['begintime'] . " AND " . self::FLD_CALL_END_TIME . " <= " . $data['endtime'];
+		$sql .= " WHERE " . self::FLD_CALL_BEGIN_TIME . " >= ? AND " . self::FLD_CALL_END_TIME . " <= ?";
+		$params[] = $data['begintime'];
+		$params[] = $data['endtime'];
 		
 		if (!empty(trim($data['number']))) {
 			
 			$numbers = explode("|", str_replace(array("*", "?"), array("%", "_"), $data['number']));
-			$query .= " AND (";
+			$sql .= " AND (";
 			
 			for ($i = 0, $size = sizeof($numbers); $i < $size; ++$i) {
 				
 				if ($i > 0) {
-					$query .= " OR ";
+					$sql .= " OR ";
 				}
 				
 				$numbers[$i] = trim($numbers[$i]);
 				
 				if ($data['direction'] === "from") {
 					
-					$query .= self::FLD_CALLING_NUMBER . " LIKE '" . $numbers[$i] . "'";
+					$sql .= self::FLD_CALLING_NUMBER . " LIKE ?";
+					$params[] = $numbers[$i];
 					
 				} else if ($data['direction'] === "to") {
 					
-					$query .= self::FLD_ORIG_CALLED_NUMBER . " LIKE '" . $numbers[$i] . "'" . 
-					" OR " . self::FLD_FINAL_CALLED_NUMBER . " LIKE '" . $numbers[$i] . "'";
+					$sql .= self::FLD_ORIG_CALLED_NUMBER . " LIKE ?" .
+					" OR " . self::FLD_FINAL_CALLED_NUMBER . " LIKE ?";
+					$params[] = $numbers[$i];
+					$params[] = $numbers[$i];
+
 				} else {
 					
-					$query .= self::FLD_CALLING_NUMBER . " LIKE '" . $numbers[$i] . "'" . 
-					" OR " . self::FLD_ORIG_CALLED_NUMBER . " LIKE '" . $numbers[$i] . "'" . 
-					" OR " . self::FLD_FINAL_CALLED_NUMBER . " LIKE '" . $numbers[$i] . "'";
+					$sql .= self::FLD_CALLING_NUMBER . " LIKE ?" .
+					" OR " . self::FLD_ORIG_CALLED_NUMBER . " LIKE ?" .
+					" OR " . self::FLD_FINAL_CALLED_NUMBER . " LIKE ?";
+					$params[] = $numbers[$i];
+					$params[] = $numbers[$i];
+					$params[] = $numbers[$i];
 				}
 			}
-			$query .= ")";
+			$sql .= ")";
 		}
 		
 		if ($data['zero'] === 'false') {
 			
-			$query .= " AND " . self::FLD_CALL_DURATION . " > 0";
+			$sql .= " AND " . self::FLD_CALL_DURATION . " > 0";
 		}
 		
-		$query .= " ORDER BY " . self::FLD_CALL_BEGIN_TIME . ";";
+		$sql .= " ORDER BY " . self::FLD_CALL_BEGIN_TIME . ";";
 		
-		return $query;
+		return array("sql" => $sql, "params" => $params);
 	}
 
 }
