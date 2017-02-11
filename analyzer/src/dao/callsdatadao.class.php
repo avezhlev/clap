@@ -57,7 +57,7 @@ class CallsDataDao {
 		$sql = "SELECT " . implode(",", $fieldsToSelect) . " FROM " . self::CDR_TABLE;
 		$params = array();
 		
-		$sql .= " WHERE " . self::FLD_CALL_BEGIN_TIME . " >= ? AND " . self::FLD_CALL_END_TIME . " <= ?";
+		$sql .= " WHERE " . self::FLD_CALL_END_TIME . " >= ? AND " . self::FLD_CALL_BEGIN_TIME . " <= ?";
 		$params[] = $data['begintime'];
 		$params[] = $data['endtime'];
 		
