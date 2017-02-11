@@ -1,6 +1,28 @@
 /**
  *Created by Alexandr Vezhlev.
  */
+
+/**
+ *Localization data
+ */
+const COLUMN_NUMBER = "#";
+const COLUMN_TOTAL_DURATION = "Total duration";
+const COLUMN_NAMES = {
+					callingPartyNumber: "Calling party number",
+					originalCalledPartyNumber: "Called party number (orig.)",
+					finalCalledPartyNumber: "Called party number (final)",
+					dateTimeOrigination: "Origination time",
+					dateTimeConnect: "Connect time",
+					dateTimeDisconnect: "Disconnect time",
+					duration: "Duration"
+					};
+
+/**
+ *Global counters
+ */
+var dataColumnCount = 0;
+var totalDuration = 0;
+var renderStep = 200;
  
  /**
  *Sets the default values of date-time input fields.
@@ -53,12 +75,13 @@ function queryData() {
 			
 				showData(request.responseText);
 			}
-			
+
 			document.getElementById("spinner").className = "spinner hidden";
 		}
 	};
 	
 	request.ontimeout = function() {
+
 		document.getElementById("spinner").className = "spinner hidden";
 		alert("Request timed out");
 	};
@@ -90,25 +113,10 @@ function queryData() {
 	request.send();
 }
 
-
 /**
  *Parses JSON array of objects and outputs it as an HTML table into the Content div
  */
 function showData(data) {
-
-	//localization data
-	const COLUMN_NUMBER = "#";
-	const COLUMN_TOTAL_DURATION = "Total duration";
-	const COLUMN_NAMES = {
-						callingPartyNumber: "Calling party number",
-						originalCalledPartyNumber: "Called party number (orig.)",
-						finalCalledPartyNumber: "Called party number (final)",
-						dateTimeOrigination: "Origination time",
-						dateTimeConnect: "Connect time",
-						dateTimeDisconnect: "Disconnect time",
-						duration: "Duration"
-						};
-						
 	
 	if (data) {
 	
@@ -126,7 +134,7 @@ function showData(data) {
 			headerCell.innerHTML = COLUMN_NUMBER;
 			row.appendChild(headerCell);
 			
-			var dataColumnCount = 0;
+			dataColumnCount = 0;
 			
 			for (key in calls[0]) {
 				
@@ -139,42 +147,83 @@ function showData(data) {
 		
 		var tbody = document.createElement("TBODY");
 		table.appendChild(tbody);
+
+		document.getElementById("content").appendChild(table);
 		
-		var totalDuration = 0;
+		totalDuration = 0;
 		
-		for (var i = 0; i < calls.length; ++i) {
+		var iterations = parseInt(calls.length / renderStep) + 1;
+		for (var i = 0; i < iterations; ++i) {
 			
-			var row = tbody.insertRow(-1);
-			row.insertCell(-1).innerHTML = i + 1;
+			setTimeout(createRow, 0, calls, i * renderStep, tbody);
+		}
+		
+		
+	} else {
+	
+		alert("Invalid input parameters");
+	}
+}
+
+
+/**
+ *Creates n x rows, where n = renderStep, and appends them to tbody
+ */
+function createRow(calls, index, tbody) {
+	
+	var rows = new Array;
+
+	var bound;
+	if ((index + renderStep + 1) > calls.length) {
+
+		bound = calls.length;
+	} else {
+
+		bound = index + renderStep;
+	}
+
+	for (var i = index; i < bound; ++i) {
+
+		var row = document.createElement("TR");
+		row.insertCell(-1).innerHTML = i + 1;
+
+		for (key in calls[i]) {
 			
-			for (key in calls[i]) {
+			var cell = row.insertCell(-1);
+			
+			switch (true) {
 				
-				var cell = row.insertCell(-1);
+				//convert unix time data to a readable local time
+				case key.toLowerCase().includes("datetime"):
+				cell.innerHTML = formatDateTime(calls[i][key]);
+				break;
 				
-				switch (true) {
+				//convert duration data to h:mm:ss format
+				case key.toLowerCase().includes("duration"):
 					
-					//convert unix time data to a readable local time
-					case key.toLowerCase().includes("datetime"):
-					cell.innerHTML = formatDateTime(calls[i][key]);
+					cell.innerHTML = getDurationString(calls[i][key]);
+					
+					if (key === "duration") {
+						totalDuration += parseInt(calls[i][key]);
+					}
 					break;
 					
-					//convert duration data to h:mm:ss format
-					case key.toLowerCase().includes("duration"):
-						
-						cell.innerHTML = getDurationString(calls[i][key]);
-						
-						if (key === "duration") {
-							totalDuration += parseInt(calls[i][key]);
-						}
-						break;
-						
-					//print other data as is
-					default:
-						cell.innerHTML = calls[i][key];
-				}
+				//print other data as is
+				default:
+					cell.innerHTML = calls[i][key];
 			}
 		}
-	
+
+		rows.push(row);
+	}
+
+	for (var i = 0; i < rows.length; ++i) {
+
+		tbody.appendChild(rows[i]);
+	}
+
+	//if the row is the last one
+	if ((index + renderStep + 1) > calls.length) {
 		//add row with total duration data
 		var row = tbody.insertRow(-1);
 		var cell = row.insertCell(-1);
@@ -182,11 +231,6 @@ function showData(data) {
 		cell.innerHTML = COLUMN_TOTAL_DURATION;
 		row.insertCell(-1).innerHTML = getDurationString(totalDuration);
 		
-		document.getElementById("content").appendChild(table);
-		
-	} else {
-	
-		alert("Invalid input parameters");
 	}
 }
 
