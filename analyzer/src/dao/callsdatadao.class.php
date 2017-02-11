@@ -20,6 +20,9 @@ class CallsDataDao {
 	const FLD_CALL_END_TIME = "dateTimeDisconnect";
 	const FLD_CALL_DURATION = "duration";
 
+	const MAX_RECORDS = 10000;
+	const MAX_RECORDS_EXCEEDED_ERROR = "The number of entries exceeds " . self::MAX_RECORDS . ". Please narrow the selection conditions.";
+	const NO_DATA_INFO = "No data for these conditions";
 
 
 	static function getCallsData($data) {
@@ -29,18 +32,32 @@ class CallsDataDao {
 		try {
 			//connect to mysql db
 			$conn = new PDO("mysql:host=" . self::DB_SERVER .";dbname=" . self::DB_NAME, self::DB_USER, self::DB_PASSWORD);
-	    	$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-	    	$query = self::getQuery($data);
-	    	$stmt = $conn->prepare($query["sql"]);
-	    	//if sql query is ok
-	    	if ($stmt->execute($query["params"])) {
-	    		$callsData = $stmt->fetchAll(PDO::FETCH_ASSOC);
-	    	}
-	    } catch(PDOException $e) {
-		    $callsData[] = array("Error: " => $e->getMessage());
-		}
+			$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$query = self::getQuery($data);
+			$stmt = $conn->prepare($query["sql"]);
+			//if sql query is ok
+			if ($stmt->execute($query["params"])) {
+				$i = 0;
+				while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+					++$i;
+					if ($i > self::MAX_RECORDS) {
+						return array(array("Error" => self::MAX_RECORDS_EXCEEDED_ERROR));
+					}
+					$callsData[] = $row;
+				}
+				if ($i == 0) {
+					return array(array("Info" => self::NO_DATA_INFO));
+				}
+			}
+		} catch(PDOException $e) {
 
-		$conn = null;
+			return array(array("Error: " => $e->getMessage()));
+
+		} finally {
+
+			$stmt = null;
+			$conn = null;
+		}
 
 		return $callsData;
 	}
