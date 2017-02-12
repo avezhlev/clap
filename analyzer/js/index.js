@@ -18,11 +18,16 @@ const COLUMN_NAMES = {
 					};
 
 /**
+ *Can do some tweaks here
+ */
+var requestTimeout = 3000; //timeout of AJAX request in milliseconds
+var renderStep = 200; //number of rows to add to a table as a single batch
+
+/**
  *Global counters
  */
-var dataColumnCount = 0;
-var totalDuration = 0;
-var renderStep = 200;
+var dataColumnCount;
+var totalDuration ;
  
  /**
  *Sets the default values of date-time input fields.
@@ -109,7 +114,7 @@ function queryData() {
 									"&zero=" + document.getElementById("zero").checked
 									, true);
 									
-	request.timeout = 3000;
+	request.timeout = requestTimeout;
 	request.send();
 }
 
@@ -167,7 +172,7 @@ function showData(data) {
 
 
 /**
- *Creates n x rows, where n = renderStep, and appends them to tbody
+ *Creates 'renderStep' table rows out of 'calls' array starting from 'index' and appends them to tbody
  */
 function createRow(calls, index, tbody) {
 	
