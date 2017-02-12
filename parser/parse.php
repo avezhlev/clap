@@ -14,10 +14,10 @@
 	//save current time immediately after entering the script
 	$scriptStartTime = time();
 	
-	//turn on debug messages
-	ini_set("display_errors", 1);
-	ini_set("display_startup_errors", 1);
-	error_reporting(E_ALL);
+	//debug messages
+	//ini_set("display_errors", 1);
+	//ini_set("display_startup_errors", 1);
+	//error_reporting(E_ALL);
 	
 	//set name prefixes of files to parse
 	define("CDR_PREFIX", "cdr_");
@@ -44,28 +44,41 @@
 	while ($file = fgets(STDIN)){
 		$files[] = trim($file);
 	}
-	
-	//connect to mysql server or die painfully
-	$mysqli = new mysqli(DB_SERVER, DB_USER, DB_PASSWORD, DB_NAME) or die(mysqli_error);
 		
-	//parse each file and save data into respective table
-	foreach ($files as $file) {
-		
-		switch (true) {
-			case strpos($file, CDR_PREFIX) !== false:
-				parseFileIntoTable($file, $mysqli, CDR_TABLE, $cdrPossiblyOverflownIntIndices);
-				break;
-			case strpos($file, CMR_PREFIX) !== false:
-				parseFileIntoTable($file, $mysqli, CMR_TABLE);
-				break;
+	try {
+		$conn = new PDO("mysql:host=" . DB_SERVER .";dbname=" . DB_NAME, DB_USER, DB_PASSWORD);
+		$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+		$conn->beginTransaction();
+		//parse each file and save data into respective table
+		foreach ($files as $file) {
+			
+			switch (true) {
+				case strpos($file, CDR_PREFIX) !== false:
+					parseFileIntoTable($file, $conn, CDR_TABLE, $cdrPossiblyOverflownIntIndices);
+					break;
+				case strpos($file, CMR_PREFIX) !== false:
+					parseFileIntoTable($file, $conn, CMR_TABLE);
+					break;
+			}
 		}
+		
+		$conn->commit();
+		//touch timestamp file with previously saved script start time
+		touch(__DIR__ . "/timestamp", $scriptStartTime);
+
+	} catch(PDOException $e) {
+		
+		$conn->rollBack();
+		echo $e->getMessage();
+		//TODO: logging
+
+	} finally {
+
+		$conn = null;
 	}
 	
-	//touch timestamp file with previously saved script start time
-	touch(__DIR__ . "/timestamp", $scriptStartTime);
 	
-	
-	function parseFileIntoTable($file, $mysqli, $table, $possiblyOverflownIntIndices = array()) {
+	function parseFileIntoTable($file, $conn, $table, $possiblyOverflownIntIndices = array()) {
 		
 		//explode file content into lines
 		$lines = explode(PHP_EOL, trim(file_get_contents($file)));
@@ -98,7 +111,7 @@
 		}
 		
 		//execute query
-		$mysqli->query($query);
+		$conn->query($query);
 	}
 	
 ?>
