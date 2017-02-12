@@ -16,7 +16,7 @@ CREATE TABLE `cmr` (
   `numberPacketsLost` int(11) NOT NULL DEFAULT '0',
   `jitter` int(11) NOT NULL DEFAULT '0',
   `latency` int(11) NOT NULL DEFAULT '0',
-  `pkid` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
+  `pkid` int(11) NOT NULL DEFAULT '0',
   `directoryNumPartition` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `globalCallId_ClusterID` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
   `deviceName` varchar(129) COLLATE utf8_unicode_ci NOT NULL,
