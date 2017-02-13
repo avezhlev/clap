@@ -79,6 +79,9 @@ function queryData() {
 			if (request.status == 200) {
 			
 				showData(request.responseText);
+			} else {
+
+				alert("Service is not responding");
 			}
 
 			document.getElementById("spinner").className = "spinner hidden";

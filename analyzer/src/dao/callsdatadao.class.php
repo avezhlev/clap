@@ -23,6 +23,7 @@ class CallsDataDao {
 	const MAX_RECORDS = 10000;
 	const MAX_RECORDS_EXCEEDED_ERROR = "The number of entries exceeds " . self::MAX_RECORDS . ". Please narrow the selection conditions.";
 	const NO_DATA_INFO = "No data for these conditions";
+	const SQL_SERVER_ISSUE = "SQL service unavailable";
 
 
 	static function getCallsData($data) {
@@ -41,7 +42,7 @@ class CallsDataDao {
 				while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					++$i;
 					if ($i > self::MAX_RECORDS) {
-						return array(array("Error" => self::MAX_RECORDS_EXCEEDED_ERROR));
+						return array(array("Warning" => self::MAX_RECORDS_EXCEEDED_ERROR));
 					}
 					$callsData[] = $row;
 				}
@@ -51,7 +52,11 @@ class CallsDataDao {
 			}
 		} catch(PDOException $e) {
 
-			return array(array("Error: " => $e->getMessage()));
+			if (is_null($conn)) {
+				return array(array("Error: " => self::SQL_SERVER_ISSUE));
+			} else {
+				return array(array("Error: " => $e->getMessage()));
+			}
 
 		} finally {
 
