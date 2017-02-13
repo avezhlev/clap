@@ -18,6 +18,9 @@
 	//ini_set("display_errors", 1);
 	//ini_set("display_startup_errors", 1);
 	//error_reporting(E_ALL);
+
+	//log file location
+	define("LOG_FILE", "/var/log/clap/parse.log");
 	
 	//set name prefixes of files to parse
 	define("CDR_PREFIX", "cdr_");
@@ -50,8 +53,10 @@
 		$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		$conn->beginTransaction();
 		//parse each file and save data into respective table
+		$currentFile = "";
 		foreach ($files as $file) {
 			
+			$currentFile = $file;
 			switch (true) {
 				case strpos($file, CDR_PREFIX) !== false:
 					parseFileIntoTable($file, $conn, CDR_TABLE, $cdrPossiblyOverflownIntIndices);
@@ -66,15 +71,27 @@
 		//touch timestamp file with previously saved script start time
 		touch(__DIR__ . "/timestamp", $scriptStartTime);
 
-	} catch(PDOException $e) {
+		empty($files) ?
+			logData("No new files to parse.") :
+			logData("Successfully parsed " . count($files) . " files.");
+
+	} catch (PDOException $e) {
 		
-		$conn->rollBack();
-		echo $e->getMessage();
-		//TODO: logging
+		if (is_null($conn)) {
+			logData("Parsing failure: " . $e->getMessage() . ". Unparsed files: " . count($files) . ".");
+		} else {
+			$conn->rollBack();
+			logData("Parsing failure: " . $e->getMessage() . " when parsing file '" . $currentFile . "'. Batch transaction rolled back. Unparsed files: " . count($files) . ".");
+		}
 
 	} finally {
 
 		$conn = null;
+	}
+
+
+	function logData($data) {
+		file_put_contents(LOG_FILE, date("Y-m-d H:i:s") . " " . $data . PHP_EOL, FILE_APPEND);
 	}
 	
 	
