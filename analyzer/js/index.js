@@ -81,7 +81,7 @@ function queryData() {
 				showData(request.responseText);
 			} else {
 
-				alert("Service is not responding");
+				showData('[{"Error: ":"Server is not responding"}]');
 			}
 
 			document.getElementById("spinner").className = "spinner hidden";
@@ -231,7 +231,7 @@ function createRow(calls, index, tbody) {
 	}
 
 	//if the row is the last one
-	if ((index + renderStep + 1) > calls.length) {
+	if ((index + renderStep + 1) > calls.length && calls.length > 1) {
 		//add row with total duration data
 		var row = tbody.insertRow(-1);
 		var cell = row.insertCell(-1);
