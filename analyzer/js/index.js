@@ -71,7 +71,7 @@ function queryData() {
 	document.getElementById("content").innerHTML = "";
 	document.getElementById("spinner").className = "spinner";
 	
-	request = new XMLHttpRequest();
+	var request = new XMLHttpRequest();
 	request.onreadystatechange = function() {
 		
 		if (request.readyState == 4) {
@@ -110,7 +110,7 @@ function queryData() {
 		endTime = Math.floor(endTime / 1000) + timezoneOffset;
 	}
 	
-	request.open("GET", "getdata.php?direction=" + document.getElementById("direction").value + 
+	request.open("GET", "/api/calls/?direction=" + document.getElementById("direction").value +
 									"&number=" + document.getElementById("number").value + 
 									"&begintime=" + beginTime + 
 									"&endtime=" + endTime + 

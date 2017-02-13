@@ -16,9 +16,9 @@
  *	zero			boolean,				true if zero-duration calls should be selected
  */
 
-require_once("src/dao/callsdatadao.class.php");
-require_once("src/view/callsdataview.class.php");
+require_once("inc/dao/callsdatadao.class.php");
+require_once("inc/view/callsdataview.class.php");
 
-echo CallsDataView::generate(CallsDataDao::getCallsData($_GET));
+echo CallsDataView::asJSON(CallsDataDao::getCallsData($_GET));
 
 ?>
