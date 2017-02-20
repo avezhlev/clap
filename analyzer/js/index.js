@@ -109,16 +109,17 @@ function queryData() {
 	} else {
 		endTime = Math.floor(endTime / 1000) + timezoneOffset;
 	}
+
+	var body = "direction=" + encodeURIComponent(document.getElementById("direction").value) +
+				"&number=" + encodeURIComponent(document.getElementById("number").value) + 
+				"&begintime=" + encodeURIComponent(beginTime) + 
+				"&endtime=" + encodeURIComponent(endTime) + 
+				"&zero=" + encodeURIComponent(document.getElementById("zero").checked);
 	
-	request.open("GET", "/api/calls/?direction=" + document.getElementById("direction").value +
-									"&number=" + document.getElementById("number").value + 
-									"&begintime=" + beginTime + 
-									"&endtime=" + endTime + 
-									"&zero=" + document.getElementById("zero").checked
-									, true);
-									
+	request.open("POST", "/api/calls/", true);
+	request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');						
 	request.timeout = requestTimeout;
-	request.send();
+	request.send(body);
 }
 
 /**

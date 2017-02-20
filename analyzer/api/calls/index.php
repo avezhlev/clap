@@ -19,6 +19,6 @@
 require_once("inc/dao/callsdatadao.class.php");
 require_once("inc/view/callsdataview.class.php");
 
-echo CallsDataView::asJSON(CallsDataDao::getCallsData($_GET));
+echo CallsDataView::asJSON(CallsDataDao::getCallsData($_POST));
 
 ?>
