@@ -5,30 +5,28 @@
  */
 
 /**
- *Script parses CUCM log files in FILES_PATH
+ *Script loads its parameters from INI_FILE,
+ *parses CUCM log files in FILES_PATH parameter
  *into specific MySQL tables
- *and moves them to PARSED_FILES_PATH
+ *and moves them to PARSED_PATH parameter
  */
 
-//set these parameters
+//change this if you put ini file elsewhere
+define("INI_FILE", "/etc/clap/clap.ini");
+//*****************************************
 
-//set cucm log files location
-define("FILES_PATH", "/var/ftp");
+//ini file sections and keys
+//database
+define("DATABASE", "database");
+define("URL", "url");
+define("USER", "user");
+define("PASSWORD", "password");
+//parser
+define("PARSER", "parser");
+define("FILES_PATH", "filespath");
+define("PARSED_PATH", "parsedpath");
+define("LOG_FILE", "logfile");
 
-//set parsed files location
-define("PARSED_FILES_PATH", "/var/ftp/parsed");
-
-//set log file location
-define("LOG_FILE", "/var/log/clap/parse.log");
-
-//set database credentials
-define("DB_SERVER", "localhost");
-define("DB_USER", "cucm");
-define("DB_PASSWORD", "cucmpassword");
-define("DB_NAME", "cucm");
-
-
-/////////////////////////////////
 //name prefixes of files to parse
 define("CDR_PREFIX", "cdr_");
 define("CMR_PREFIX", "cmr_");
@@ -37,26 +35,33 @@ define("CMR_PREFIX", "cmr_");
 define("CDR_TABLE", "cdr");
 define("CMR_TABLE", "cmr");
 
-//precalculated 2^32 to fix overflown signed integer fields
+//pre-calculated 2^32 to fix overflown signed integer fields
 define("SIGNED_INT32_FIXER", 4294967296);
 
 //indices of cdr_* files entries with possibly overflown signed integer values
 $cdrPossiblyOverflownIntIndices = array(7, 13, 21, 28, 35, 43, 85, 91);
 
-logMessage("Started files parsing in directory " . FILES_PATH);
+$parameters = parse_ini_file(INI_FILE, true);
+$logFile = $parameters[PARSER][LOG_FILE];
 
-$directoryEntries = scandir(FILES_PATH);
+logMessage($logFile, "Started files parsing in directory " . $parameters[PARSER][FILES_PATH]);
+
+$directoryEntries = scandir($parameters[PARSER][FILES_PATH]);
 $files = array();
 foreach ($directoryEntries as $entry) {
-    if (is_file(FILES_PATH . DIRECTORY_SEPARATOR . $entry)) {
+    if (is_file($parameters[PARSER][FILES_PATH] . DIRECTORY_SEPARATOR . $entry)) {
         $files[] = $entry;
     }
 }
 
-if (is_writeable(FILES_PATH) and is_writeable(PARSED_FILES_PATH)) {
+if (is_writeable($parameters[PARSER][FILES_PATH]) and is_writeable($parameters[PARSER][PARSED_PATH])) {
 
     try {
-        $conn = new PDO("mysql:host=" . DB_SERVER . ";dbname=" . DB_NAME, DB_USER, DB_PASSWORD);
+        $conn = new PDO(
+            $parameters[DATABASE][URL],
+            $parameters[DATABASE][USER],
+            $parameters[DATABASE][PASSWORD]
+        );
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         $parsedFilesCount = 0;
@@ -71,17 +76,22 @@ if (is_writeable(FILES_PATH) and is_writeable(PARSED_FILES_PATH)) {
                 switch (true) {
 
                     case strpos($file, CDR_PREFIX) !== false:
-                        $records = getRecordsFromFile(FILES_PATH . DIRECTORY_SEPARATOR . $file, $cdrPossiblyOverflownIntIndices);
+                        $records = getRecordsFromFile(
+                            $parameters[PARSER][FILES_PATH] . DIRECTORY_SEPARATOR . $file,
+                            $cdrPossiblyOverflownIntIndices
+                        );
                         $conn->query(getInsertQuery(CDR_TABLE, $records));
                         break;
 
                     case strpos($file, CMR_PREFIX) !== false:
-                        $records = getRecordsFromFile(FILES_PATH . DIRECTORY_SEPARATOR . $file);
+                        $records = getRecordsFromFile($parameters[PARSER][FILES_PATH] . DIRECTORY_SEPARATOR . $file);
                         $conn->query(getInsertQuery(CMR_TABLE, $records));
                         break;
                 }
 
-                if (!rename(FILES_PATH . DIRECTORY_SEPARATOR . $file, PARSED_FILES_PATH. DIRECTORY_SEPARATOR . $file)) {
+                if (!rename($parameters[PARSER][FILES_PATH] . DIRECTORY_SEPARATOR . $file,
+                    $parameters[PARSER][PARSED_PATH] . DIRECTORY_SEPARATOR . $file)
+                ) {
                     throw new Exception("Cannot move file");
                 }
 
@@ -94,30 +104,35 @@ if (is_writeable(FILES_PATH) and is_writeable(PARSED_FILES_PATH)) {
                 $conn->rollBack();
                 $errorMessage = $e instanceof PDOException ? "Not valid file format" : $e->getMessage();
 
-                logMessage("Parsing failure: '" . $errorMessage . "' when parsing file '" . $file . "'.");
+                logMessage($logFile, "Parsing failure: '" . $errorMessage . "' when parsing file '" . $file . "'.");
             }
         }
 
         empty($files) ?
-            logMessage("No new files to parse.") :
-            logMessage("Parsed " . $parsedFilesCount . " files. Added " . $parsedRecordsCount . " records.");
+            logMessage($logFile, "No new files to parse.") :
+            logMessage($logFile, "Parsed " . $parsedFilesCount . " files. Added " . $parsedRecordsCount . " records.");
 
     } catch (PDOException $e) {
 
-        logMessage("Fatal error: 'Cannot establish database connection'. Unparsed files: " . count($files) . ".");
+        logMessage($logFile, "Fatal error: 'Cannot establish database connection'. Unparsed files: " . count($files) . ".");
 
     } finally {
 
         $conn = null;
     }
-} else { //if FILES_PATH or PARSED_FILES_PATH are not writable
+} else { //if FILES_PATH or PARSED_PATH are not writable
 
-    logMessage("Fatal error: 'Check write permissions for " . FILES_PATH . " and " . PARSED_FILES_PATH . "'. Unparsed files: " . count($files) . ".");
+    logMessage($logFile,
+        "Fatal error: 'Check write permissions for " .
+        $parameters[PARSER][FILES_PATH] .
+        " and " .
+        $parameters[PARSER][PARSED_PATH] .
+        "'. Unparsed files: " . count($files) . ".");
 }
 
 
-function logMessage($data) {
-    file_put_contents(LOG_FILE, date("Y-m-d H:i:s") . " " . $data . PHP_EOL, FILE_APPEND);
+function logMessage($logFile, $message) {
+    file_put_contents($logFile, date("Y-m-d H:i:s") . " " . $message . PHP_EOL, FILE_APPEND);
 }
 
 
