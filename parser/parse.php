@@ -56,23 +56,30 @@ try {
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $parsedFilesCount = 0;
+    $parsedRecordsCount = 0;
     //parse each file and save data into respective table
     foreach ($files as $file) {
 
         try {
             $conn->beginTransaction();
+            $records = null;
 
             switch (true) {
+
                 case strpos($file, CDR_PREFIX) !== false:
-                    getInsertQueryForFile($file, $conn, CDR_TABLE, $cdrPossiblyOverflownIntIndices);
+                    $records = getRecordsFromFile($file, $cdrPossiblyOverflownIntIndices);
+                    $conn->query(getInsertQuery(CDR_TABLE, $records));
                     break;
+
                 case strpos($file, CMR_PREFIX) !== false:
-                    getInsertQueryForFile($file, $conn, CMR_TABLE);
+                    $records = getRecordsFromFile($file);
+                    $conn->query(getInsertQuery(CMR_TABLE, $records));
                     break;
             }
 
             $conn->commit();
             $parsedFilesCount++;
+            $parsedRecordsCount += count($records);
 
         } catch (Exception $e) {
 
@@ -88,7 +95,7 @@ try {
 
     empty($files) ?
         logData("No new files to parse.") :
-        logData("Successfully parsed " . $parsedFilesCount . " files.");
+        logData("Successfully parsed " . $parsedFilesCount . " files. Added " . $parsedRecordsCount . " records.");
 
 } catch (PDOException $e) {
 
@@ -105,40 +112,49 @@ function logData($data) {
 }
 
 
-function getInsertQueryForFile($file, $conn, $table, $possiblyOverflownIntIndices = array()) {
+function getInsertQuery($table, $records) {
+
+    $query = "INSERT INTO " . $table . " VALUES ";
+    foreach ($records as $record) {
+        $query .= "(0," . implode(",", $record) . "),";
+    }
+    $query = substr($query, 0, -1) . ";";
+
+    return $query;
+}
+
+
+function getRecordsFromFile($file, $possiblyOverflownIntIndices = array()) {
+
+    $records = array();
 
     //explode file content into lines
     $lines = explode(PHP_EOL, trim(file_get_contents($file)));
     $entries = count($lines);
 
-    //begin sql query construction
-    $query = "INSERT INTO " . $table . " VALUES ";
-
     //start from line 2 because lines 0 and 1 are headers
     for ($i = 2; $i < $entries; ++$i) {
 
         //explode each line into array of strings
-        $data = explode(",", trim($lines[$i]));
+        $record = explode(",", trim($lines[$i]));
 
         //fix possibly overflown signed integer fields
         foreach ($possiblyOverflownIntIndices as $index) {
-            if ($data[$index] < 0) {
-                $data[$index] += SIGNED_INT32_FIXER;
+            if ($record[$index] < 0) {
+                $record[$index] += SIGNED_INT32_FIXER;
             }
         }
         //set completely empty strings to '0' value (to make proper sql query)
-        for ($j = 0; $j < count($data); ++$j) {
-            if (empty($data[$j])) {
-                $data[$j] = '0';
+        for ($j = 0; $j < count($record); ++$j) {
+            if (empty($record[$j])) {
+                $record[$j] = '0';
             }
         }
+        $records[] = $record;
 
-        //combine all data into query
-        $query .= "(0," . implode(",", $data) . ")" . ($i === $entries - 1 ? ";" : ",");
     }
 
-    //execute query
-    $conn->query($query);
+    return $records;
 }
 
 ?>
