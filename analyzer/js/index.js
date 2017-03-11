@@ -116,7 +116,7 @@ function queryData() {
 				"&endtime=" + encodeURIComponent(endTime) + 
 				"&zero=" + encodeURIComponent(document.getElementById("zero").checked);
 	
-	request.open("POST", "/api/calls/", true);
+	request.open("POST", window.location.pathname + "/api/calls/", true);
 	request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');						
 	request.timeout = requestTimeout;
 	request.send(body);
