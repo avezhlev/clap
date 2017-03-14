@@ -1,17 +1,11 @@
 <?php
 
 class CallsDataDao {
-
-	//set database credentials
-	const DB_SERVER = "localhost";
-	const DB_USER = "cucm";
-	const DB_PASSWORD = "cucmpassword";
-	const DB_NAME = "cucm";
 	
-	//set names of database tables
+	//names of database tables
 	const CDR_TABLE = "cdr";
 	
-	//set fields
+	//table fields
 	const FLD_CALLING_NUMBER = "callingPartyNumber";
 	const FLD_ORIG_CALLED_NUMBER = "originalCalledPartyNumber";
 	const FLD_FINAL_CALLED_NUMBER = "finalCalledPartyNumber";
@@ -20,40 +14,63 @@ class CallsDataDao {
 	const FLD_CALL_END_TIME = "dateTimeDisconnect";
 	const FLD_CALL_DURATION = "duration";
 
-	const MAX_RECORDS = 10000;
-	const MAX_RECORDS_EXCEEDED_ERROR = "The number of entries exceeds " . self::MAX_RECORDS . ". Please narrow the selection conditions.";
-	const NO_DATA_INFO = "No data for these conditions";
-	const SQL_SERVER_ISSUE = "SQL service unavailable";
+    const ERROR_MSG_SQL_SERVER_ISSUE = "SQL service unavailable";
+	const ERROR_MSG_MAX_RECORDS_EXCEEDED = "The number of entries exceeds ";
+    const INFO_MSG_NARROW_CONDITIONS = "Please narrow selection conditions";
+	const INFO_MSG_NO_DATA = "No data for these conditions";
 
+    private $databaseUrl;
+    private $databaseUser;
+    private $databasePassword;
 
-	static function getCallsData($data) {
+    private $maxRecords;
+
+    public function __construct($iniFile) {
+        $this->init($iniFile);
+    }
+
+    private function init($iniFile) {
+        $parameters = parse_ini_file($iniFile, true);
+        if ($parameters !== false) {
+            $this->databaseUrl = $parameters['database']['url'];
+            $this->databaseUser = $parameters['database']['user'];
+            $this->databasePassword = $parameters['database']['password'];
+            $this->maxRecords = $parameters['analyzer']['maxRecords'];
+        }
+    }
+
+    public function getCallsData($data) {
 
 		$callsData = array();
 
 		try {
 			//connect to mysql db
-			$conn = new PDO("mysql:host=" . self::DB_SERVER .";dbname=" . self::DB_NAME, self::DB_USER, self::DB_PASSWORD);
+			$conn = new PDO($this->databaseUrl, $this->databaseUser, $this->databasePassword);
 			$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-			$query = self::getQuery($data);
+
+			$query = $this->getQuery($data);
 			$stmt = $conn->prepare($query["sql"]);
 			//if sql query is ok
 			if ($stmt->execute($query["params"])) {
 				$i = 0;
 				while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
 					++$i;
-					if ($i > self::MAX_RECORDS) {
-						return array(array("Warning" => self::MAX_RECORDS_EXCEEDED_ERROR));
+					if ($i > $this->maxRecords) {
+						return array(array(
+						    "Warning" => self::ERROR_MSG_MAX_RECORDS_EXCEEDED . $this->maxRecords,
+                            "Info" => self::INFO_MSG_NARROW_CONDITIONS
+                        ));
 					}
 					$callsData[] = $row;
 				}
 				if ($i == 0) {
-					return array(array("Info" => self::NO_DATA_INFO));
+					return array(array("Info" => self::INFO_MSG_NO_DATA));
 				}
 			}
 		} catch(PDOException $e) {
 
 			if (is_null($conn)) {
-				return array(array("Error: " => self::SQL_SERVER_ISSUE));
+				return array(array("Error: " => self::ERROR_MSG_SQL_SERVER_ISSUE));
 			} else {
 				return array(array("Error: " => $e->getMessage()));
 			}
@@ -69,7 +86,7 @@ class CallsDataDao {
 
 
 
-	static function getQuery($data) {
+	private function getQuery($data) {
 		
 		//set array of fields to be selected
 		$fieldsToSelect = array(self::FLD_CALLING_NUMBER, self::FLD_ORIG_CALLED_NUMBER, self::FLD_FINAL_CALLED_NUMBER, 
