@@ -131,11 +131,11 @@ function showData(data) {
 	
 		var calls = JSON.parse(data);
 		
-		var table = document.createElement("TABLE");
-		var thead = document.createElement("THEAD");
-		table.appendChild(thead);
-		
-		if (calls.length > 0) {
+		if (calls != null && calls.length > 0) {
+
+            var table = document.createElement("TABLE");
+            var thead = document.createElement("THEAD");
+            table.appendChild(thead);
 		
 			var row = thead.insertRow(-1);
 			
@@ -152,21 +152,20 @@ function showData(data) {
 				row.appendChild(headerCell);
 				++dataColumnCount;
 			}
-		}
-		
-		var tbody = document.createElement("TBODY");
-		table.appendChild(tbody);
 
-		document.getElementById("content").appendChild(table);
-		
-		totalDuration = 0;
-		
-		var iterations = parseInt(calls.length / renderStep) + 1;
-		for (var i = 0; i < iterations; ++i) {
-			
-			setTimeout(createRow, 0, calls, i * renderStep, tbody);
+            var tbody = document.createElement("TBODY");
+            table.appendChild(tbody);
+
+            document.getElementById("content").appendChild(table);
+
+            totalDuration = 0;
+
+            var iterations = parseInt(calls.length / renderStep) + 1;
+            for (var i = 0; i < iterations; ++i) {
+
+                setTimeout(createRow, 0, calls, i * renderStep, tbody);
+            }
 		}
-		
 		
 	} else {
 	
